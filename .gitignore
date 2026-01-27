@@ -1,30 +1,34 @@
+# macOS
+.DS_Store
+
 # Node
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Environment & secrets
+# Secrets
 .env
 .env.*
 service-account.json
-
-# Runtime / sessions
 sessions.json
 
-# OS / Editor
-.DS_Store
-.idea/
-.vscode/
-
-# Test & temp output
+# Local test / temp
 test_output/
-docs/.DS_Store
 
-# Docker
-*.log
+# Internal docs exclusions
+docs/roadmap
+docs/roadmap.md
+docs/prompts/
+
+# Editor
+.vscode/
+.idea/
 
 # Misc
+*.log
 *.tmp
 *.bak
 
+# Odd local file
+.gitignorenode_modules
