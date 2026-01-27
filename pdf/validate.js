@@ -1,9 +1,35 @@
-export function validateFile(file) {
-  const allowed = [
-    'application/pdf',
-    'image/jpeg',
-    'image/png'
-  ]
+import fs from 'fs';
+import path from 'path';
+import { convertToPDF, generatePreview, getPdfPageCount } from './pdfUtils.js'; // твої утиліти для конвертації та превʼю
 
-  return allowed.includes(file.mime_type)
+/**
+ * validateFile
+ * Основна функція валідації файлу, конвертації в PDF A4 та підготовки повідомлення з кнопками.
+ * 
+ * @param {Buffer} fileBuffer - вхідний файл
+ * @param {string} fileName - назва файлу
+ * @returns {Promise<object>} - об'єкт з даними для відправки користувачу
+ */
+export async function validateFile(fileBuffer, fileName) {
+  // 1. Конвертація в PDF A4
+  const pdfBuffer = await convertToPDF(fileBuffer, { fileName });
+
+  // 2. Генерація превʼю (заглушка або реальна логіка)
+  const previewBuffer = await generatePreview(pdfBuffer);
+
+  // 3. Отримуємо кількість сторінок
+  const numPages = await getPdfPageCount(pdfBuffer);
+
+  // 4. Формуємо базові параметри
+  const basicParams = {
+    pages: numPages
+  };
+
+  // 5. Повертаємо результат
+  return {
+    pdf: pdfBuffer,
+    preview: previewBuffer,
+    basicParams
+  };
 }
+

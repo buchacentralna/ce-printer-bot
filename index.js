@@ -1,14 +1,14 @@
-import express from "express";
-import { initBot } from "./bot/bot.js";
+import 'dotenv/config';
+import express from 'express';
+import './bot/bot.js'; // бот буде запускатися, коли є секрет
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const port = process.env.PORT || 8080; // Fly обов’язково використовує PORT
 
-// healthcheck для Fly
-app.get("/", (_, res) => res.send("OK"));
-
-app.listen(PORT, () => {
-  console.log("HTTP server running on", PORT);
+app.get('/', (req, res) => {
+  res.send('Bot is running!');
 });
 
-initBot();
+app.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
+});

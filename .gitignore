@@ -1,0 +1,30 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment & secrets
+.env
+.env.*
+service-account.json
+
+# Runtime / sessions
+sessions.json
+
+# OS / Editor
+.DS_Store
+.idea/
+.vscode/
+
+# Test & temp output
+test_output/
+docs/.DS_Store
+
+# Docker
+*.log
+
+# Misc
+*.tmp
+*.bak
+
