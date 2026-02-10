@@ -3,6 +3,7 @@ import https from "node:https";
 import os from "node:os";
 import path from "node:path";
 
+import * as Sentry from "@sentry/node";
 import sharp from "sharp";
 import { Markup } from "telegraf";
 
@@ -31,6 +32,7 @@ async function compressImage(buffer) {
       .toBuffer();
   } catch (e) {
     console.error("Compression error:", e);
+    Sentry.captureException(e);
     return buffer; // Fallback to original if compression fails
   }
 }
@@ -625,6 +627,7 @@ export function registerHandlers(bot) {
       ctx.session.lastWizardMsgId = finalMsg.message_id;
     } catch (error) {
       console.error("Error processing file:", error);
+      Sentry.captureException(error);
       const supportedFormats =
         "✅ **Зображення**: JPG, PNG, WEBP, TIFF, HEIC/HEIF\n" +
         "✅ **Документи**: PDF, DOC/DOCX, XLS/XLSX, PPT/PPTX, TXT, RTF";
@@ -788,6 +791,7 @@ export function registerHandlers(bot) {
       );
     } catch (error) {
       console.error("Error generating check PDF:", error);
+      Sentry.captureException(error);
       const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("🔄 Спробувати ще раз", "action_print_next")],
       ]);
@@ -977,6 +981,7 @@ export function registerHandlers(bot) {
       resetPrintSession(ctx);
     } catch (error) {
       console.error("Print action error:", error);
+      Sentry.captureException(error);
       const errMsg = `❌ Критична помилка: ${error.message}`;
       const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("🔄 Почати спочатку", "action_print_next")],

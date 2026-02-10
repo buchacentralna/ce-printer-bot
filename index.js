@@ -1,4 +1,22 @@
 import "dotenv/config";
+import * as Sentry from "@sentry/node";
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  enabled: !!process.env.SENTRY_DSN,
+});
+
+process.on("unhandledRejection", (reason) => {
+  Sentry.captureException(reason);
+  console.error("Unhandled Rejection:", reason);
+});
+
+process.on("uncaughtException", (err) => {
+  Sentry.captureException(err);
+  console.error("Uncaught Exception:", err);
+  process.exit(1);
+});
+
 import express from "express";
 
 import "./bot/bot.js"; // бот буде запускатися, коли є секрет

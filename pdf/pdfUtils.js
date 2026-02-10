@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 
+import * as Sentry from "@sentry/node";
 import { PDFDocument } from "pdf-lib";
 import sharp from "sharp";
 
@@ -66,7 +67,7 @@ export async function generatePreview(pdfBuffer) {
     return previewBuffer;
   } catch (err) {
     console.error("Error in generatePreview:", err);
-
+    Sentry.captureException(err);
     // Повертаємо заглушку, щоб робот не "падав" повністю
     return Buffer.from("error-preview");
   } finally {

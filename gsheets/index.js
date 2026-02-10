@@ -1,5 +1,6 @@
 import path from "node:path";
 
+import * as Sentry from "@sentry/node";
 import { google } from "googleapis";
 
 import { fileExistsAsync } from "../utils/fs.js";
@@ -55,7 +56,7 @@ export async function isUserAuthorized(telegramId) {
     );
   } catch (error) {
     console.error("Error checking authorization:", error);
-
+    Sentry.captureException(error);
     return false;
   }
 }
@@ -79,7 +80,7 @@ export async function getAdminsList() {
     return admins ?? [];
   } catch (error) {
     console.error("Error getting admin list:", error);
-
+    Sentry.captureException(error);
     return [];
   }
 }
@@ -113,6 +114,7 @@ export async function logPrintAction(data) {
     });
   } catch (error) {
     console.error("Error logging print action:", error);
+    Sentry.captureException(error);
   }
 }
 
@@ -148,6 +150,7 @@ export async function getUserStats(chatId) {
     return totalPages;
   } catch (error) {
     console.error("Error getting user stats:", error);
+    Sentry.captureException(error);
     return 0;
   }
 }
@@ -184,6 +187,7 @@ export async function generateQuarterlyReport() {
     return csvContent;
   } catch (error) {
     console.error("Error generating quarterly report:", error);
+    Sentry.captureException(error);
     return "Error generating report";
   }
 }

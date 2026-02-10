@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 
+import * as Sentry from "@sentry/node";
 import libre from "libreoffice-convert";
 import { PDFDocument, PageSizes, degrees } from "pdf-lib";
 import sharp from "sharp";
@@ -87,6 +88,7 @@ export async function processPdf(fileBuffer, options = {}) {
       pdfDoc = await PDFDocument.load(currentBuffer);
     } catch (err) {
       console.error("Office conversion error:", err);
+      Sentry.captureException(err);
       throw new Error(
         `Помилка конвертації ${ext.toUpperCase()} у PDF. Перевірте, чи встановлено LibreOffice.`,
       );
@@ -165,6 +167,7 @@ async function grayscalePdfUsingGS(buffer) {
     }
   } catch (err) {
     console.error("CRITICAL GS error:", err.message);
+    Sentry.captureException(err);
     throw err;
   } finally {
     if (await fileExistsAsync(tempIn)) await fs.unlink(tempIn);

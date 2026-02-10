@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/node";
 import { Telegraf, Markup } from "telegraf";
 import LocalSession from "telegraf-session-local";
 
@@ -31,6 +32,7 @@ if (!token) {
     ) {
       return; // Ігноруємо цю помилку, вона не критична
     }
+    Sentry.captureException(err);
     // Можна додати сповіщення користувачу, якщо це доречно
     try {
       const keyboard = Markup.inlineKeyboard([
@@ -50,6 +52,7 @@ if (!token) {
     .then(() => console.log("✅ Telegram bot (Telegraf) started successfully."))
     .catch((err) => {
       console.error("❌ Failed to start Telegram bot:", err);
+      Sentry.captureException(err);
       process.exit(1);
     });
 

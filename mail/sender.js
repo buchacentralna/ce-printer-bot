@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/node";
 import nodemailer from "nodemailer";
 import { PDFDocument } from "pdf-lib";
 
@@ -102,6 +103,7 @@ export async function sendPrintEmail(pdfBuffer, fileName, options = {}) {
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error("Failed to send print email:", error);
+    Sentry.captureException(error);
     return { success: false, error: error.message };
   }
 }

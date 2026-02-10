@@ -68,7 +68,7 @@ The bot uses `telegraf-session-local` persisted to `sessions.json`. Key session 
 
 ## Environment Variables
 
-See `.env.example`. Key vars: `TELEGRAM_BOT_TOKEN`, `GOOGLE_SPREADSHEET_ID`, `GOOGLE_SERVICE_ACCOUNT_JSON`, `SMTP_HOST/PORT/USER/PASS/FROM`, `PRINTER_EMAIL`, `ADMIN_ID`.
+See `.env.example`. Key vars: `TELEGRAM_BOT_TOKEN`, `GOOGLE_SPREADSHEET_ID`, `GOOGLE_SERVICE_ACCOUNT_JSON`, `SMTP_HOST/PORT/USER/PASS/FROM`, `PRINTER_EMAIL`, `ADMIN_ID`, `SENTRY_DSN`.
 
 Google Sheets auth: either `service-account.json` file in project root or `GOOGLE_SERVICE_ACCOUNT_JSON` env var (JSON string).
 
