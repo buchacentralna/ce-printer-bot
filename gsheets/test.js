@@ -7,7 +7,7 @@ import { isUserAuthorized, logPrintAction, getUserStats, generateQuarterlyReport
 async function runTests() {
     console.log('--- Testing Google Sheets Module ---');
 
-    // Test with missing SPREADSHEET_ID
+    // Test with missing GOOGLE_SPREADSHEET_ID
     console.log('Test: isUserAuthorized (no ID)');
     const auth1 = await isUserAuthorized(12345);
     console.log('Result:', auth1 === false ? 'PASS' : 'FAIL');

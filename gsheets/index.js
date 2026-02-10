@@ -4,7 +4,7 @@ import { google } from "googleapis";
 
 import { fileExistsAsync } from "../utils/fs.js";
 
-const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
+const GOOGLE_SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
 const SERVICE_ACCOUNT_PATH = path.resolve(
   process.cwd(),
   "service-account.json",
@@ -41,7 +41,7 @@ const sheets = google.sheets({ version: "v4", auth });
 export async function isUserAuthorized(telegramId) {
   try {
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
+      spreadsheetId: GOOGLE_SPREADSHEET_ID,
       range: "Користувачі!B:C", // Припускаємо, що ID у першій колонці
     });
 
@@ -67,7 +67,7 @@ export async function isUserAuthorized(telegramId) {
 export async function getAdminsList() {
   try {
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
+      spreadsheetId: GOOGLE_SPREADSHEET_ID,
       range: "Користувачі!B2:C",
     });
 
@@ -94,7 +94,7 @@ export async function logPrintAction(data) {
 
   try {
     await sheets.spreadsheets.values.append({
-      spreadsheetId: SPREADSHEET_ID,
+      spreadsheetId: GOOGLE_SPREADSHEET_ID,
       range: "Логи!A1:F1",
       valueInputOption: "USER_ENTERED",
       requestBody: {
@@ -124,7 +124,7 @@ export async function logPrintAction(data) {
 export async function getUserStats(chatId) {
   try {
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
+      spreadsheetId: GOOGLE_SPREADSHEET_ID,
       range: "Логи!A:D", // Дата, ID, Назва, Сторінки
     });
 
@@ -159,7 +159,7 @@ export async function getUserStats(chatId) {
 export async function generateQuarterlyReport() {
   try {
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
+      spreadsheetId: GOOGLE_SPREADSHEET_ID,
       range: "Логи!A:F",
     });
 

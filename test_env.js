@@ -25,7 +25,7 @@ async function testConnections() {
         });
         const sheets = google.sheets({ version: 'v4', auth });
         const response = await sheets.spreadsheets.get({
-            spreadsheetId: process.env.SPREADSHEET_ID,
+            spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
         });
         console.log(`✅ Google Sheets: "${response.data.properties.title}"`);
     } catch (error) {
