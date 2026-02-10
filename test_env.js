@@ -1,15 +1,15 @@
+import path from 'node:path';
+
 import 'dotenv/config';
 import { google } from 'googleapis';
 import { Telegraf } from 'telegraf';
-import fs from 'fs';
-import path from 'path';
 
 async function testConnections() {
     console.log('--- Connection Test ---');
 
     // 1. Test Telegram Bot
     try {
-        const bot = new Telegraf(process.env.BOT_TOKEN);
+        const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
         const me = await bot.telegram.getMe();
         console.log(`✅ Telegram Bot: @${me.username} (ID: ${me.id})`);
     } catch (error) {

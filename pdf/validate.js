@@ -1,5 +1,6 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
+
 import { convertToPDF, generatePreview, getPdfPageCount } from './pdfUtils.js'; // твої утиліти для конвертації та превʼю
 
 /**

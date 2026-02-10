@@ -1,8 +1,10 @@
-import fs from 'fs';
-import path from 'path';
-import { processPdf } from './processor.js';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { PDFDocument, PageSizes } from 'pdf-lib';
 import sharp from 'sharp';
+
+import { processPdf } from './processor.js';
+import { fileExistsAsync } from '../utils/fs.js';
 
 async function runTests() {
     console.log('--- Starting PDF Processor Tests ---');
@@ -24,24 +26,26 @@ async function runTests() {
     }).png().toBuffer();
 
     const testDir = './test_output';
-    if (!fs.existsSync(testDir)) fs.mkdirSync(testDir);
+    if (!await fileExistsAsync(testDir)) {
+        await fs.mkdir(testDir);
+    }
 
     // Test Case 1: Image to PDF (Plain)
     console.log('Test 1: Image to PDF...');
     const res1 = await processPdf(mockImageBuffer);
-    fs.writeFileSync(path.join(testDir, 'test1_img.pdf'), res1.pdf);
+    await fs.writeFile(path.join(testDir, 'test1_img.pdf'), res1.pdf);
     console.log(`  Pages: ${res1.pages} (Expected 1)`);
 
     // Test Case 2: Image to PDF (Grayscale)
     console.log('Test 2: Image to PDF (Grayscale)...');
     const res2 = await processPdf(mockImageBuffer, { grayscale: true });
-    fs.writeFileSync(path.join(testDir, 'test2_img_gs.pdf'), res2.pdf);
+    await fs.writeFile(path.join(testDir, 'test2_img_gs.pdf'), res2.pdf);
     console.log(`  Pages: ${res2.pages} (Expected 1)`);
 
     // Test Case 3: PDF N-up (2 pages -> 1 sheet)
     console.log('Test 3: PDF 2-up (2 pages -> 1 sheet)...');
     const res3 = await processPdf(mockPdfBuffer, { nUp: 2 });
-    fs.writeFileSync(path.join(testDir, 'test3_2up.pdf'), res3.pdf);
+    await fs.writeFile(path.join(testDir, 'test3_2up.pdf'), res3.pdf);
     console.log(`  Pages: ${res3.pages} (Expected 1)`);
 
     // Test Case 4: PDF N-up (4 pages -> 1 sheet)
@@ -50,7 +54,7 @@ async function runTests() {
     for (let i = 0; i < 4; i++) mockPdf4Doc.addPage(PageSizes.A4).drawText(`Page ${i + 1}`);
     const mockPdf4Buffer = Buffer.from(await mockPdf4Doc.save());
     const res4 = await processPdf(mockPdf4Buffer, { nUp: 4 });
-    fs.writeFileSync(path.join(testDir, 'test4_4up.pdf'), res4.pdf);
+    await fs.writeFile(path.join(testDir, 'test4_4up.pdf'), res4.pdf);
     console.log(`  Pages: ${res4.pages} (Expected 1)`);
 
     // Test Case 5: Page Limit (101 pages)

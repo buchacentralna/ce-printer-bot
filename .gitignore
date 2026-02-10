@@ -9,7 +9,6 @@ yarn-error.log*
 
 # Secrets
 .env
-.env.*
 service-account.json
 sessions.json
 
