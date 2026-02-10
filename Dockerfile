@@ -1,13 +1,14 @@
 FROM node:24-alpine
 
 WORKDIR /data/app
+ADD . /data/app
 
 RUN \
     apk add --no-cache ghostscript \
     apk add --no-cache libreoffice libheif libde265 \
     apk add --no-cache ttf-dejavu ttf-freefont \
     apk add --no-cache font-noto-cjk \
-    npm ci --omite=dev
+    npm ci --omit=dev
 
 # Відкриваємо порт (Fly визначає його через $PORT)
 EXPOSE 3000
