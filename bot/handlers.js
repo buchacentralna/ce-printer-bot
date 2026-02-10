@@ -13,7 +13,7 @@ import {
   logPrintAction,
   getAdminsList,
 } from "../gsheets/index.js";
-import { sendEmail, applyOptionsToPdf } from "../mail/index.js";
+import { sendPrintEmail, applyOptionsToPdf } from "../mail/index.js";
 import { validateFile } from "../pdf/validate.js";
 import { mergeImagesToPdf } from "../pdf/processor.js";
 import { generatePreview } from "../pdf/pdfUtils.js";
@@ -501,6 +501,7 @@ export function registerHandlers(bot) {
           }
 
           await renderCurrentWizardStep(ctx);
+
           return;
         }
 
@@ -770,7 +771,7 @@ export function registerHandlers(bot) {
       const summary =
         `🏁 **Перевірка налаштувань**\n\n` +
         `📂 Тип: ${s.type}\n` +
-        `🎨 ${s.color ? 'Кольоровий' : 'Чорно-білий'} друк\n` +
+        `🎨 ${s.color ? "Кольоровий друк" : "Чорно-білий друк"}\n` +
         `👯‍♂️ Копій кожної сторінки: ${s.copiesPerPage}\n` +
         `📏 Сторінок на аркуші: ${s.pagesPerSheet}\n` +
         `👥 Загальний тираж: ${s.copies}\n` +
@@ -819,7 +820,7 @@ export function registerHandlers(bot) {
       `✅ Налаштування завершено!\n\n` +
       `📄 Файл: ${f.name}\n` +
       `👥 Тип: ${s.type}\n` +
-      `🎨 ${s.color ? 'Кольоровий' : 'Чорно-білий'} друк\n` +
+      `🎨 ${s.color ? "Кольоровий" : "Чорно-білий друк"}\n` +
       `👯‍♂️ Копій кожної сторінки: ${s.copiesPerPage}\n` +
       `📏 Сторінок на аркуші: ${s.pagesPerSheet}\n` +
       `🔢 Копій: ${s.copies}\n` +
@@ -900,7 +901,7 @@ export function registerHandlers(bot) {
       const pdfBuffer = await fs.readFile(filePath);
       const settings = ctx.session.printSettings;
 
-      const result = await sendEmail(pdfBuffer, ctx.session.currentFile.name, {
+      const result = await sendPrintEmail(pdfBuffer, ctx.session.currentFile.name, {
         ...settings,
         sourcePaths: ctx.session.currentFile.sourcePaths,
         fileName: ctx.session.currentFile.name,
@@ -950,7 +951,7 @@ export function registerHandlers(bot) {
               `📄 Сторінок: ${ctx.session.currentFile.pages}\n` +
               `👥 Копій: ${settings.copies}\n` +
               `📂 Тип: ${settings.type}\n` +
-              `🎨 ${s.color ? 'Кольоровий' : 'Чорно-білий'} друк\n`;
+              `🎨 ${s.color ? "Кольоровий друк" : "Чорно-білий друк"}\n`;
 
             for (const adminId of admins) {
               try {

@@ -5,4 +5,4 @@
 
 import { sendPrintEmail, applyOptionsToPdf } from './sender.js';
 
-export { sendPrintEmail as sendEmail, sendPrintEmail, applyOptionsToPdf };
+export { sendPrintEmail, applyOptionsToPdf };

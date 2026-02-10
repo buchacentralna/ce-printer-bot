@@ -12,7 +12,6 @@ import { processPdf } from "../pdf/processor.js";
  */
 export async function applyOptionsToPdf(pdfBuffer, options) {
   let currentBuffer = pdfBuffer;
-  console.log("КОЛЬОРОВИЙ? — ", options.color);
 
   // 1. Обробка кольору та N-up (через наш модуль pdf/processor.js)
   // Це покриває grayscale та 2-up/4-up
@@ -56,9 +55,10 @@ export async function applyOptionsToPdf(pdfBuffer, options) {
 function buildSubject(fileName, options) {
   const parts = [`Print: ${fileName}`];
   if (options.copies) parts.push(`Copies: ${options.copies}`);
-  if (options.color)
-    parts.push(`Color: ${options.color === "bw" ? "B&W" : "Color"}`);
+  if (typeof options.color === 'boolean')
+    parts.push(`Color: ${options.color ? "Color" : "B&W"}`);
   if (options.duplex) parts.push(`Duplex: ${options.duplex}`);
+  
   return parts.join(" | ");
 }
 
