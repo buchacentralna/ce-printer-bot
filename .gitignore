@@ -20,9 +20,10 @@ docs/roadmap
 docs/roadmap.md
 docs/prompts/
 
-# Editor
+# Editor / tools
 .vscode/
 .idea/
+.claude/
 
 # Misc
 *.log
