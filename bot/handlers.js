@@ -75,6 +75,7 @@ async function resetPrintSession(ctx) {
   ctx.session.multiImages = [];
   ctx.session.lastMultiMsgId = null;
   ctx.session.lastWizardMsgId = null;
+  ctx.session.lastBotMsgId = null;
   ctx.session.pendingFile = null;
 }
 
@@ -113,18 +114,15 @@ async function editWizardStep(ctx, text, keyboard, mediaBuffer = null) {
           type: "photo",
           media: { source: mediaBuffer },
           caption: text,
-          parse_mode: "Markdown",
         },
         { reply_markup: keyboard.reply_markup },
       );
     } else if (isMedia) {
       await ctx.telegram.editMessageCaption(chatId, messageId, null, text, {
-        parse_mode: "Markdown",
         reply_markup: keyboard.reply_markup,
       });
     } else {
       await ctx.telegram.editMessageText(chatId, messageId, null, text, {
-        parse_mode: "Markdown",
         reply_markup: keyboard.reply_markup,
       });
     }
@@ -352,6 +350,7 @@ export function registerHandlers(bot) {
     await ctx.editMessageText(
       `Ви обрали: ${type}. Тепер надішліть файл або до 20 зображень для друку.`,
     );
+    ctx.session.lastBotMsgId = ctx.callbackQuery.message.message_id;
   });
 
   bot.hears(["Служіння", "Особисте"], async (ctx) => {
@@ -366,7 +365,7 @@ export function registerHandlers(bot) {
       };
     }
     ctx.session.printSettings.type = ctx.message.text;
-    await ctx.reply(
+    const typeMsg = await ctx.reply(
       `Ви обрали: ${ctx.message.text}. Тепер надішліть файл (фото або документ) для друку або оберіть декілька зображень.`,
       Markup.inlineKeyboard([
         [
@@ -377,10 +376,16 @@ export function registerHandlers(bot) {
         ],
       ]),
     );
+    ctx.session.lastBotMsgId = typeMsg.message_id;
   });
 
   // --- ОБРОБКА ФАЙЛІВ ---
   bot.on(["photo", "document", "sticker"], async (ctx) => {
+    if (ctx.session.lastBotMsgId) {
+      await ctx.telegram.deleteMessage(ctx.chat.id, ctx.session.lastBotMsgId).catch(() => {});
+      ctx.session.lastBotMsgId = null;
+    }
+
     if (!ctx.session.printSettings || !ctx.session.printSettings.type) {
       return ctx.reply("Будь ласка, спочатку оберіть тип друку (/start).");
     }
@@ -394,25 +399,12 @@ export function registerHandlers(bot) {
     } else if (ctx.session.multiImageMode) {
       const count = (ctx.session.multiImages?.length || 0) + 1;
       const statusText = `⏳ Обробляю файл ${count}/20, зачекайте...`;
-      try {
-        if (ctx.session.lastMultiMsgId) {
-          await ctx.telegram.editMessageText(
-            ctx.chat.id,
-            ctx.session.lastMultiMsgId,
-            null,
-            statusText,
-          );
-          progressMsgId = ctx.session.lastMultiMsgId;
-        } else {
-          statusMsg = await ctx.reply(statusText);
-          ctx.session.lastMultiMsgId = statusMsg.message_id;
-          progressMsgId = statusMsg.message_id;
-        }
-      } catch (e) {
-        statusMsg = await ctx.reply(statusText);
-        ctx.session.lastMultiMsgId = statusMsg.message_id;
-        progressMsgId = statusMsg.message_id;
+      if (ctx.session.lastMultiMsgId) {
+        await ctx.telegram.deleteMessage(ctx.chat.id, ctx.session.lastMultiMsgId).catch(() => {});
       }
+      statusMsg = await ctx.reply(statusText);
+      ctx.session.lastMultiMsgId = statusMsg.message_id;
+      progressMsgId = statusMsg.message_id;
     }
 
     try {
@@ -541,27 +533,20 @@ export function registerHandlers(bot) {
           name: fileName,
         });
 
+        const msgToDelete = ctx.session.lastMultiMsgId || progressMsgId;
+        if (msgToDelete) {
+          await ctx.telegram.deleteMessage(ctx.chat.id, msgToDelete).catch(() => {});
+        }
+
         const count = ctx.session.multiImages.length;
         const doneText = `✅ Додано зображення ${count}/20. Можете надсилати ще або натисніть "Це все".`;
-        try {
-          await ctx.telegram.editMessageText(
-            ctx.chat.id,
-            ctx.session.lastMultiMsgId,
-            null,
-            doneText,
-            Markup.inlineKeyboard([
-              [Markup.button.callback("✅ Це все", "multi_image_done")],
-            ]),
-          );
-        } catch (e) {
-          const statusMsg = await ctx.reply(
-            doneText,
-            Markup.inlineKeyboard([
-              [Markup.button.callback("✅ Це все", "multi_image_done")],
-            ]),
-          );
-          ctx.session.lastMultiMsgId = statusMsg.message_id;
-        }
+        const doneMsg = await ctx.reply(
+          doneText,
+          Markup.inlineKeyboard([
+            [Markup.button.callback("✅ Це все", "multi_image_done")],
+          ]),
+        );
+        ctx.session.lastMultiMsgId = doneMsg.message_id;
         return;
       }
 
@@ -726,7 +711,13 @@ export function registerHandlers(bot) {
 
   bot.action("wizard_copies_other", async (ctx) => {
     ctx.session.awaitingCopies = true;
-    await ctx.editMessageText("Введіть кількість копій (1-50):");
+    const msg = ctx.callbackQuery.message;
+    const isMedia = msg.photo || msg.document || msg.video;
+    if (isMedia) {
+      await ctx.editMessageCaption("Введіть кількість копій (1-50):", { reply_markup: { inline_keyboard: [] } });
+    } else {
+      await ctx.editMessageText("Введіть кількість копій (1-50):");
+    }
   });
 
   bot.on("text", async (ctx, next) => {
@@ -1005,16 +996,23 @@ export function registerHandlers(bot) {
   bot.action("action_cancel_print", async (ctx) => {
     resetPrintSession(ctx);
     await ctx.answerCbQuery("Друк скасовано");
-    await ctx.editMessageText(
-      "❌ Друк скасовано. Надішліть новий файл для початку.",
-      Markup.inlineKeyboard([
-        [Markup.button.callback("🏠 Головне меню", "type_selection_restart")],
-      ]),
-    );
+    const text = "❌ Друк скасовано. Надішліть новий файл для початку.";
+    const keyboard = Markup.inlineKeyboard([
+      [Markup.button.callback("🏠 Головне меню", "type_selection_restart")],
+    ]);
+    const msg = ctx.callbackQuery.message;
+    const isMedia = msg.photo || msg.document || msg.video;
+    if (isMedia) {
+      await ctx.editMessageCaption(text, keyboard);
+    } else {
+      await ctx.editMessageText(text, keyboard);
+    }
+    ctx.session.lastBotMsgId = ctx.callbackQuery.message.message_id;
   });
 
   bot.action("type_selection_restart", async (ctx) => {
     resetPrintSession(ctx);
+    await ctx.deleteMessage().catch(() => {});
     await showStartMenu(ctx);
   });
 
@@ -1116,7 +1114,12 @@ export function registerHandlers(bot) {
     }
 
     await ctx.answerCbQuery("Обʼєдную зображення...");
-    const statusMsg = await ctx.reply("⏳ Створюю PDF з ваших зображень...");
+    const cbMsgId = ctx.callbackQuery.message.message_id;
+    try {
+      await ctx.editMessageText("⏳ Створюю PDF з ваших зображень...", { reply_markup: { inline_keyboard: [] } });
+    } catch (e) {
+      // ignore edit errors
+    }
 
     try {
       const images = await Promise.all(
@@ -1156,7 +1159,7 @@ export function registerHandlers(bot) {
         [Markup.button.callback("⚙️ Налаштувати друк", "wizard_start")],
       ];
 
-      await ctx.telegram.deleteMessage(ctx.chat.id, statusMsg.message_id);
+      await ctx.telegram.deleteMessage(ctx.chat.id, cbMsgId).catch(() => {});
 
       let finalMsg;
       if (previewBuffer) {
