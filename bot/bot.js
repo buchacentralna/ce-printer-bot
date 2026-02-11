@@ -10,13 +10,14 @@ if (process.env.NODE_ENV === "development") {
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 
-if (!token) {
+export const bot = token ? new Telegraf(token) : null;
+
+if (!bot) {
   console.error(
     "CRITICAL: TELEGRAM_BOT_TOKEN is not set. Telegram bot will not start.",
   );
 } else {
   console.log("Initializing Telegram bot...");
-  const bot = new Telegraf(token);
 
   const session = new LocalSession({ database: "sessions.json" });
   bot.use(session.middleware());
@@ -51,14 +52,7 @@ if (!token) {
     }
   });
 
-  bot
-    .launch({ dropPendingUpdates: true })
-    .then(() => console.log("✅ Telegram bot (Telegraf) started successfully."))
-    .catch((err) => {
-      console.error("❌ Failed to start Telegram bot:", err);
-      Sentry.captureException(err);
-      process.exit(1);
-    });
+  // No automatic launch here - it will be handled in index.js depending on environment
 
   process.once("SIGINT", () => bot.stop("SIGINT"));
   process.once("SIGTERM", () => bot.stop("SIGTERM"));
