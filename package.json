@@ -12,6 +12,7 @@
     "node": "24"
   },
   "scripts": {
+    "node-check": "node --check .",
     "start": "NODE_ENV=development node index.js"
   },
   "dependencies": {
