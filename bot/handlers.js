@@ -942,7 +942,7 @@ export function registerHandlers(bot) {
               `📄 Сторінок: ${ctx.session.currentFile.pages}\n` +
               `👥 Копій: ${settings.copies}\n` +
               `📂 Тип: ${settings.type}\n` +
-              `🎨 ${s.color ? "Кольоровий друк" : "Чорно-білий друк"}\n`;
+              `🎨 ${settings.color ? "Кольоровий друк" : "Чорно-білий друк"}\n`;
 
             for (const adminId of admins) {
               try {
