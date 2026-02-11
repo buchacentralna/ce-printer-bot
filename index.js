@@ -32,9 +32,10 @@ app.get("/", (req, res) => {
 
 // Configure bot startup based on environment
 if (bot) {
-  if (process.env.NODE_ENV === "production" && process.env.WEBHOOK_DOMAIN) {
-    const webhookPath = process.env.BOT_WEBHOOK_PATH || "bot-webhook";
-    const webhookUrl = `${process.env.WEBHOOK_DOMAIN}/${webhookPath}`;
+  if (process.env.NODE_ENV === "production" && process.env.FLY_APP_NAME) {
+    const webhookPath = `webhook/${process.env.TELEGRAM_BOT_TOKEN}`;
+    const hostname = `${process.env.FLY_APP_NAME}.fly.dev`;
+    const webhookUrl = `${hostname}/${webhookPath}`;
 
     console.log(`Setting up webhook: ${webhookUrl}`);
     app.use(bot.webhookCallback(`/${webhookPath}`));
@@ -47,9 +48,11 @@ if (bot) {
     // Development mode or missing webhook config -> use polling
     console.log("Starting bot in polling mode (Development)...");
     bot
-      .launch({ dropPendingUpdates: true })
+      .startPolling()
       .then(() => console.log("✅ Bot started in polling mode"))
-      .catch((err) => console.error("❌ Failed to start bot in polling mode:", err));
+      .catch((err) =>
+        console.error("❌ Failed to start bot in polling mode:", err),
+      );
   }
 }
 
