@@ -24,7 +24,7 @@ import express from "express";
 import { bot } from "./bot/bot.js";
 
 const app = express();
-const port = process.env.PORT || 8080; // Fly обов’язково використовує PORT
+const port = process.env.PORT; // Fly обов’язково використовує PORT
 
 app.get("/", (req, res) => {
   res.send("Bot is running!");
@@ -112,5 +112,6 @@ if (bot) {
 }
 
 app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
+  const hostname = `${process.env.FLY_APP_NAME}.fly.dev`;
+  console.log(`Server running at http://${hostname}:${port}`);
 });
