@@ -1,5 +1,8 @@
-import "dotenv/config";
 import * as Sentry from "@sentry/node";
+
+if (process.env.NODE_ENV === "development") {
+  await import("dotenv/config");
+}
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,

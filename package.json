@@ -12,7 +12,7 @@
     "node": "24"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "NODE_ENV=development node index.js"
   },
   "dependencies": {
     "@sentry/node": "^10.38.0",

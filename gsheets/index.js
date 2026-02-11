@@ -5,6 +5,10 @@ import { google } from "googleapis";
 
 import { fileExistsAsync } from "../utils/fs.js";
 
+if (process.env.NODE_ENV === "development") {
+  await import("dotenv/config");
+}
+
 const GOOGLE_SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
 const SERVICE_ACCOUNT_PATH = path.resolve(
   process.cwd(),

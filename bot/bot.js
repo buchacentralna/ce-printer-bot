@@ -4,6 +4,10 @@ import LocalSession from "telegraf-session-local";
 
 import { registerHandlers } from "./handlers.js";
 
+if (process.env.NODE_ENV === "development") {
+  await import("dotenv/config");
+}
+
 const token = process.env.TELEGRAM_BOT_TOKEN;
 
 if (!token) {
