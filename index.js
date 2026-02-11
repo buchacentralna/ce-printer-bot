@@ -24,7 +24,8 @@ import express from "express";
 import { bot } from "./bot/bot.js";
 
 const app = express();
-const port = process.env.PORT; // Fly обов’язково використовує PORT
+console.log("process.env", process.env);
+const port = process.env.PORT ?? 3000; // Fly обов’язково використовує PORT
 
 app.get("/", (req, res) => {
   res.send("Bot is running!");
