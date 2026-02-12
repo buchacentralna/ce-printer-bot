@@ -19,23 +19,6 @@ if (!bot) {
 } else {
   console.log("Initializing Telegram bot...");
 
-  // Drop messages that were sent before the bot came online (within threshold)
-  const STALE_THRESHOLD = 20; // seconds
-  bot.use((ctx, next) => {
-    const now = new Date().getTime() / 1000;
-    const msgDate = ctx.message?.date || ctx.callbackQuery?.message?.date;
-
-    if (msgDate && msgDate < now - STALE_THRESHOLD) {
-      console.log(
-        `Dropping stale update from ${new Date(msgDate * 1000).toISOString()}`,
-      );
-
-      return;
-    }
-
-    return next();
-  });
-
   const session = new LocalSession({ database: "sessions.json" });
   bot.use(session.middleware());
 
