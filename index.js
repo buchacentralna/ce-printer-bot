@@ -90,8 +90,7 @@ app.get("/status", (req, res) => {
 if (bot) {
   if (process.env.NODE_ENV === "production" && process.env.FLY_APP_NAME) {
     const webhookPath = `webhook/${process.env.TELEGRAM_BOT_TOKEN}`;
-    const hostname = `${process.env.FLY_APP_NAME}.fly.dev`;
-    const webhookUrl = `${hostname}/${webhookPath}`;
+    const webhookUrl = `https://${process.env.FLY_APP_NAME}.fly.dev/${webhookPath}`;
 
     console.log(`Setting up webhook: ${webhookUrl}`);
     app.use(bot.webhookCallback(`/${webhookPath}`));
@@ -104,7 +103,7 @@ if (bot) {
     // Development mode or missing webhook config -> use polling
     console.log("Starting bot in polling mode (Development)...");
     bot
-      .startPolling()
+      .launch()
       .then(() => console.log("✅ Bot started in polling mode"))
       .catch((err) =>
         console.error("❌ Failed to start bot in polling mode:", err),
@@ -114,5 +113,6 @@ if (bot) {
 
 app.listen(port, () => {
   const hostname = `${process.env.FLY_APP_NAME}.fly.dev`;
-  console.log(`Server running at http://${hostname}:${port}`);
+  // console.log(`Server running at http://${hostname}:${port}`);
+  console.log(`Server is listening port ${port}`);
 });
