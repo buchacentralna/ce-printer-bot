@@ -38,6 +38,17 @@ if (await fileExistsAsync(SERVICE_ACCOUNT_PATH)) {
 
 const sheets = google.sheets({ version: "v4", auth });
 
+let logSheetId = null;
+
+async function getLogSheetId() {
+  if (logSheetId !== null) return logSheetId;
+  const res = await sheets.spreadsheets.get({ spreadsheetId: GOOGLE_SPREADSHEET_ID });
+  const sheet = res.data.sheets.find(s => s.properties.title === "Логи");
+  logSheetId = sheet.properties.sheetId;
+
+  return logSheetId;
+}
+
 /**
  * Перевіряє, чи авторизований користувач (чи є його telegramId в аркуші "Користувачі").
  * @param {string|number} telegramId ID користувача
@@ -98,22 +109,28 @@ export async function logPrintAction(data) {
   const date = new Date().toISOString().split("T")[0];
 
   try {
-    await sheets.spreadsheets.values.append({
+    const sheetId = await getLogSheetId();
+
+    // Insert a blank row after the header (index 1 = row 2)
+    await sheets.spreadsheets.batchUpdate({
       spreadsheetId: GOOGLE_SPREADSHEET_ID,
-      range: "Логи!A1:F1",
+      requestBody: {
+        requests: [{
+          insertDimension: {
+            range: { sheetId, dimension: "ROWS", startIndex: 1, endIndex: 2 },
+            inheritFromBefore: false,
+          },
+        }],
+      },
+    });
+
+    // Write the log data into the newly inserted row
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: GOOGLE_SPREADSHEET_ID,
+      range: "Логи!A2:G2",
       valueInputOption: "USER_ENTERED",
       requestBody: {
-        values: [
-          [
-            date,
-            chatId.toString(),
-            fileName,
-            pages,
-            copies,
-            printType,
-            isColor,
-          ],
-        ],
+        values: [[date, chatId.toString(), fileName, pages, copies, printType, isColor]],
       },
     });
   } catch (error) {
