@@ -95,6 +95,7 @@ async function editWizardStep(ctx, text, keyboard, mediaBuffer = null) {
       const res = await ctx.reply(text, keyboard);
       ctx.session.lastWizardMsgId = res.message_id;
     }
+
     return;
   }
 
@@ -153,7 +154,9 @@ async function editWizardStep(ctx, text, keyboard, mediaBuffer = null) {
 async function getLivePreview(ctx) {
   const f = ctx.session.currentFile;
   const s = ctx.session.printSettings;
-  if (!f || !f.path) return null;
+  if (!f || !f.path) {
+    return null;
+  }
 
   try {
     const pdfBuffer = await fs.readFile(f.path);
@@ -163,6 +166,7 @@ async function getLivePreview(ctx) {
       sourcePaths: f.sourcePaths,
       fileName: f.name,
     });
+
     return await generatePreview(processedBuffer);
   } catch (err) {
     console.error("Live preview error:", err);
@@ -172,16 +176,14 @@ async function getLivePreview(ctx) {
 
 async function showWizardStep1(ctx) {
   ctx.session.currentWizardStep = "color";
-  if (!ctx.session.printSettings) {
-    ctx.session.printSettings = {
-      copies: 1,
-      color: true,
-      duplex: "Ні",
-      pagesPerSheet: 1,
-      copiesPerPage: 1,
-      type: "Служіння",
-    };
-  }
+  ctx.session.printSettings = {
+    copies: 1,
+    color: true,
+    duplex: "Ні",
+    pagesPerSheet: 1,
+    copiesPerPage: 1,
+    type: ctx.session.printSettings?.type || "Служіння",
+  };
   const keyboard = Markup.inlineKeyboard([
     [Markup.button.callback("⚪ Чорно-білий", "wizard_color_bw")],
     [Markup.button.callback("🔵 Кольоровий", "wizard_color_color")],
@@ -268,7 +270,7 @@ async function renderCurrentWizardStep(ctx) {
     case "copies":
       return showWizardStepCopies(ctx);
     case "summary":
-      return showFinalSummary(ctx);
+      return generateAndSendCheckPdf(ctx);
     default:
       return showWizardStep1(ctx);
   }
@@ -663,10 +665,8 @@ export function registerHandlers(bot) {
     const cpp = parseInt(ctx.match[1]);
     ctx.session.printSettings.copiesPerPage = cpp;
 
-    // Автоматично корегуємо PPS, якщо він став меншим за CPP
-    if (ctx.session.printSettings.pagesPerSheet < cpp) {
-      ctx.session.printSettings.pagesPerSheet = cpp;
-    }
+    // Завжди скидаємо PPS до CPP, щоб уникнути застарілих значень
+    ctx.session.printSettings.pagesPerSheet = cpp;
 
     await showWizardStepPPS(ctx);
   });
@@ -706,7 +706,7 @@ export function registerHandlers(bot) {
     if (!ctx.session.printSettings)
       return ctx.reply("Помилка сесії. Почніть спочатку: /start");
     ctx.session.printSettings.copies = parseInt(ctx.match[1]);
-    await showFinalSummary(ctx);
+    await generateAndSendCheckPdf(ctx);
   });
 
   bot.action("wizard_copies_other", async (ctx) => {
@@ -730,7 +730,7 @@ export function registerHandlers(bot) {
         return ctx.reply("Помилка сесії. Почніть спочатку: /start");
       ctx.session.printSettings.copies = copies;
       ctx.session.awaitingCopies = false;
-      await showFinalSummary(ctx);
+      await generateAndSendCheckPdf(ctx);
       return;
     }
     return next();
@@ -741,6 +741,13 @@ export function registerHandlers(bot) {
   });
 
   async function generateAndSendCheckPdf(ctx) {
+    ctx.session.currentWizardStep = "summary";
+
+    const oldMsgId = ctx.callbackQuery?.message?.message_id || ctx.session.lastWizardMsgId;
+    if (oldMsgId) {
+      try { await ctx.telegram.deleteMessage(ctx.chat.id, oldMsgId); } catch (_) {}
+    }
+
     const statusMsg = await ctx.reply("⏳ Формую файл для перевірки...");
 
     try {
@@ -760,27 +767,28 @@ export function registerHandlers(bot) {
       });
 
       const summary =
-        `🏁 **Перевірка налаштувань**\n\n` +
+        `📋 Ось файл, який надіслаться на друк. Перевірте його перед відправкою!\n\n` +
         `📂 Тип: ${s.type}\n` +
         `🎨 ${s.color ? "Кольоровий друк" : "Чорно-білий друк"}\n` +
         `👯‍♂️ Копій кожної сторінки: ${s.copiesPerPage}\n` +
         `📏 Сторінок на аркуші: ${s.pagesPerSheet}\n` +
         `👥 Загальний тираж: ${s.copies}\n` +
         `🔄 Двосторонній: ${s.duplex}\n\n` +
-        `Я надіслав вам файл, який буде роздруковано. Перевірте його!`;
+        `Якщо все правильно — натисніть «Друкувати»!`;
 
       const keyboard = Markup.inlineKeyboard([
-        [Markup.button.callback("🚀 ВСЕ ВІРНО, ДРУКУЙ", "action_print")],
-        [Markup.button.callback("⬅️ Назад", "wizard_back_to_duplex")],
+        [Markup.button.callback("🖨 Друкувати!", "action_print")],
         [Markup.button.callback("⚙️ Почати спочатку", "wizard_start")],
+        [Markup.button.callback("❌ Скасувати друк", "action_cancel_print")],
       ]);
 
       await ctx.telegram.deleteMessage(ctx.chat.id, statusMsg.message_id);
 
-      await ctx.replyWithDocument(
+      const docMsg = await ctx.replyWithDocument(
         { source: processedBuffer, filename: `check_${f.name}.pdf` },
         { caption: summary, parse_mode: "Markdown", ...keyboard },
       );
+      ctx.session.lastWizardMsgId = docMsg.message_id;
     } catch (error) {
       console.error("Error generating check PDF:", error);
       Sentry.captureException(error);
@@ -794,60 +802,12 @@ export function registerHandlers(bot) {
         `❌ Помилка при генерації прев'ю: ${error.message}`,
         keyboard,
       );
-      // await showFinalSummary(ctx); // Removed fallback to avoid confusion
     }
   }
 
   bot.action("wizard_back_to_duplex", async (ctx) => {
     await showWizardStepCopies(ctx);
   });
-
-  async function showFinalSummary(ctx) {
-    ctx.session.currentWizardStep = "summary";
-    const s = ctx.session.printSettings;
-    const f = ctx.session.currentFile;
-
-    const summary =
-      `✅ Налаштування завершено!\n\n` +
-      `📄 Файл: ${f.name}\n` +
-      `👥 Тип: ${s.type}\n` +
-      `🎨 ${s.color ? "Кольоровий" : "Чорно-білий друк"}\n` +
-      `👯‍♂️ Копій кожної сторінки: ${s.copiesPerPage}\n` +
-      `📏 Сторінок на аркуші: ${s.pagesPerSheet}\n` +
-      `🔢 Копій: ${s.copies}\n` +
-      `🔄 Двосторонній: ${s.duplex}\n\n` +
-      `Бажаєте відправити на друк?`;
-
-    const keyboard = Markup.inlineKeyboard([
-      [Markup.button.callback("✅ Все вірно, друкуй", "action_print")],
-      [Markup.button.callback("⚙️ Почати спочатку", "wizard_start")],
-      [Markup.button.callback("❌ Скасувати друк", "action_cancel_print")],
-    ]);
-
-    const isMockPreview =
-      f.preview === Buffer.from("mock-preview-data").toString("base64") ||
-      f.preview === Buffer.from("error-preview").toString("base64");
-
-    if (f.preview && !isMockPreview) {
-      const previewBuffer = Buffer.from(f.preview, "base64");
-      if (ctx.callbackQuery) {
-        await editWizardStep(ctx, summary, keyboard, previewBuffer);
-      } else {
-        const res = await ctx.replyWithPhoto(
-          { source: previewBuffer },
-          { caption: summary, ...keyboard },
-        );
-        ctx.session.lastWizardMsgId = res.message_id;
-      }
-    } else {
-      if (ctx.callbackQuery) {
-        await editWizardStep(ctx, summary, keyboard);
-      } else {
-        const res = await ctx.reply(summary, keyboard);
-        ctx.session.lastWizardMsgId = res.message_id;
-      }
-    }
-  }
 
   // --- ДІЯ "ПРЯМИЙ ДРУК" ---
   bot.action("action_print_direct", async (ctx) => {

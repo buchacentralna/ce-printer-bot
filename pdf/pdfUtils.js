@@ -39,6 +39,8 @@ export async function generatePreview(pdfBuffer) {
 
   // Якщо це заглушка із сесії (іноді буває при помилках)
   if (pdfBuffer.toString() === "mock-preview-data") {
+    console.warn("mock preview...");
+
     return pdfBuffer;
   }
 
@@ -59,12 +61,10 @@ export async function generatePreview(pdfBuffer) {
     }
 
     // Додаткове стиснення через Sharp (робимо прев'ю маленьким для швидкої передачі в Telegram)
-    const previewBuffer = await sharp(outputPath)
+    return await sharp(outputPath)
       .resize(600) // ширина 600px достатня для мобільного
       .jpeg({ quality: 60, progressive: true })
       .toBuffer();
-
-    return previewBuffer;
   } catch (err) {
     console.error("Error in generatePreview:", err);
     Sentry.captureException(err);
