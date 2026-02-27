@@ -349,6 +349,65 @@ export function registerHandlers(bot) {
       };
     }
     ctx.session.printSettings.type = type;
+
+    if (ctx.session.pendingFile) {
+      const pending = ctx.session.pendingFile;
+      ctx.session.pendingFile = null;
+      await ctx.editMessageText(`Ви обрали: ${type}. Обробляю файл...`);
+      try {
+        if (pending.isPhoto) {
+          ctx.session.multiImageMode = true;
+          ctx.session.multiImages = [{ path: pending.path, name: pending.fileName }];
+          const doneMsg = await ctx.reply(
+            `✅ Додано зображення 1/20. Можете надсилати ще або натисніть "Це все".`,
+            Markup.inlineKeyboard([[Markup.button.callback("✅ Це все", "multi_image_done")]]),
+          );
+          ctx.session.lastMultiMsgId = doneMsg.message_id;
+        } else {
+          const fileBuffer = await fs.readFile(pending.path);
+          const result = await validateFile(fileBuffer, pending.fileName);
+          ctx.session.currentFile = {
+            path: pending.path,
+            name: pending.fileName,
+            pages: result.basicParams.pages,
+            preview: result.preview.toString("base64"),
+            sourcePaths: null,
+          };
+          ctx.session.printSettings = {
+            ...ctx.session.printSettings,
+            copies: 1,
+            color: true,
+            duplex: "Ні",
+            pagesPerSheet: 1,
+            copiesPerPage: 1,
+          };
+          const pages = result.basicParams.pages;
+          const text = `📄 Файл: ${pending.fileName}\n📏 Сторінок: ${pages}\n\nОберіть наступну дію:`;
+          const buttons = [];
+          if (pages <= 20) {
+            buttons.push([Markup.button.callback("🚀 Просто надрукуй це", "action_print_direct")]);
+          }
+          buttons.push([Markup.button.callback("⚙️ Налаштувати друк", "wizard_start")]);
+          buttons.push([Markup.button.callback("❌ Скасувати друк", "action_cancel_print")]);
+          let finalMsg;
+          if (result.preview) {
+            finalMsg = await ctx.replyWithPhoto(
+              { source: result.preview },
+              { caption: text, ...Markup.inlineKeyboard(buttons) },
+            );
+          } else {
+            finalMsg = await ctx.reply(text, Markup.inlineKeyboard(buttons));
+          }
+          ctx.session.lastWizardMsgId = finalMsg.message_id;
+        }
+      } catch (err) {
+        console.error("Error processing pending file after type selection:", err);
+        await ctx.reply(`❌ Помилка при обробці файлу: ${err.message}`);
+      }
+
+      return;
+    }
+
     await ctx.editMessageText(
       `Ви обрали: ${type}. Тепер надішліть файл або до 20 зображень для друку.`,
     );
@@ -386,10 +445,6 @@ export function registerHandlers(bot) {
     if (ctx.session.lastBotMsgId) {
       await ctx.telegram.deleteMessage(ctx.chat.id, ctx.session.lastBotMsgId).catch(() => {});
       ctx.session.lastBotMsgId = null;
-    }
-
-    if (!ctx.session.printSettings || !ctx.session.printSettings.type) {
-      return ctx.reply("Будь ласка, спочатку оберіть тип друку (/start).");
     }
 
     let progressMsgId = null;
@@ -449,6 +504,23 @@ export function registerHandlers(bot) {
 
       const filePath = getTempPath(fileName);
       await fs.writeFile(filePath, buffer);
+
+      // Якщо тип не вибрано — зберігаємо файл і показуємо вибір типу
+      if (!ctx.session.printSettings?.type) {
+        ctx.session.pendingFile = { fileName, isPhoto, path: filePath };
+        if (progressMsgId) {
+          await ctx.telegram.deleteMessage(ctx.chat.id, progressMsgId).catch(() => {});
+        }
+        await ctx.reply(
+          "Дякуємо, файл отримано! Залишилось лише обрати тип друку:",
+          Markup.inlineKeyboard([
+            [Markup.button.callback("💼 Служіння", "type_service")],
+            [Markup.button.callback("🏠 Особисте", "type_personal")],
+          ]),
+        );
+
+        return;
+      }
 
       // --- КОНФЛІКТИ ТА ДОДАВАННЯ ---
 
