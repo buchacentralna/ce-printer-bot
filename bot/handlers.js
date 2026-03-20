@@ -190,49 +190,7 @@ async function showWizardStep1(ctx) {
     [Markup.button.callback("❌ Скасувати друк", "action_cancel_print")],
   ]);
   const preview = await getLivePreview(ctx);
-  await editWizardStep(ctx, "Крок 1/4: Оберіть колір:", keyboard, preview);
-}
-
-async function showWizardStepCPP(ctx) {
-  ctx.session.currentWizardStep = "cpp";
-  const keyboard = Markup.inlineKeyboard([
-    [Markup.button.callback("1 копія", "wizard_cpp_1")],
-    [Markup.button.callback("2 копії", "wizard_cpp_2")],
-    [Markup.button.callback("4 копії", "wizard_cpp_4")],
-    [Markup.button.callback("⬅️ Назад", "wizard_start")],
-  ]);
-  const preview = await getLivePreview(ctx);
-  await editWizardStep(
-    ctx,
-    "Крок 2/4: Копій кожної сторінки на аркуші:",
-    keyboard,
-    preview,
-  );
-}
-
-async function showWizardStepPPS(ctx) {
-  ctx.session.currentWizardStep = "pps";
-  const cpp = ctx.session.printSettings.copiesPerPage;
-  const options = [
-    { id: 1, label: "1 сторінка" },
-    { id: 2, label: "2 сторінки" },
-    { id: 4, label: "4 сторінки" },
-  ];
-
-  const filteredOptions = options.filter((opt) => opt.id >= cpp);
-  const buttons = filteredOptions.map((opt) => [
-    Markup.button.callback(opt.label, `wizard_pps_${opt.id}`),
-  ]);
-  buttons.push([Markup.button.callback("⬅️ Назад", "wizard_back_to_cpp")]);
-
-  const keyboard = Markup.inlineKeyboard(buttons);
-  const preview = await getLivePreview(ctx);
-  await editWizardStep(
-    ctx,
-    "Крок 3/4: Сторінок на аркуші (унікальних):",
-    keyboard,
-    preview,
-  );
+  await editWizardStep(ctx, "Крок 1/2: Оберіть колір:", keyboard, preview);
 }
 
 async function showWizardStepCopies(ctx) {
@@ -247,15 +205,103 @@ async function showWizardStepCopies(ctx) {
       Markup.button.callback("10", "wizard_copies_10"),
     ],
     [Markup.button.callback("🔢 Інше", "wizard_copies_other")],
-    [Markup.button.callback("⬅️ Назад", "wizard_back_to_layout")],
+    [Markup.button.callback("⬅️ Назад", "wizard_start")],
   ]);
   const preview = await getLivePreview(ctx);
   await editWizardStep(
     ctx,
-    "Крок 4/4: Загальна кількість тиражу (копій):",
+    "Крок 2/2: Загальна кількість тиражу (копій):",
     keyboard,
     preview,
   );
+}
+
+async function showWizardFork(ctx) {
+  ctx.session.currentWizardStep = "fork";
+  const s = ctx.session.printSettings;
+  const colorLabel = s.color ? "Кольоровий" : "Чорно-білий";
+  const text = `Налаштування:\n🎨 Колір: ${colorLabel}\n👥 Копій: ${s.copies}\n\nГотові друкувати або хочете змінити додаткові параметри?`;
+  const keyboard = Markup.inlineKeyboard([
+    [Markup.button.callback("🖨 Друкувати", "wizard_fork_print")],
+    [Markup.button.callback("⚙️ Більше налаштувань", "wizard_fork_more")],
+    [Markup.button.callback("⬅️ Назад", "wizard_back_to_copies_basic")],
+  ]);
+  const preview = await getLivePreview(ctx);
+  await editWizardStep(ctx, text, keyboard, preview);
+}
+
+async function showAdvancedMenu(ctx) {
+  ctx.session.currentWizardStep = "advanced_menu";
+  const s = ctx.session.printSettings;
+  const colorLabel = s.color ? "🔵 Кольоровий" : "⚪ Чорно-білий";
+  const keyboard = Markup.inlineKeyboard([
+    [Markup.button.callback(`🎨 Колір: ${colorLabel}`, "adv_go_color")],
+    [Markup.button.callback(`👥 Копій: ${s.copies}`, "adv_go_copies")],
+    [Markup.button.callback(`👯 Копій на сторінку: ${s.copiesPerPage}`, "adv_go_cpp")],
+    [Markup.button.callback(`📏 Сторінок на аркуші: ${s.pagesPerSheet}`, "adv_go_pps")],
+    [Markup.button.callback("🖨 Друкувати", "adv_print")],
+  ]);
+  const preview = await getLivePreview(ctx);
+  await editWizardStep(ctx, "⚙️ Додаткові налаштування:", keyboard, preview);
+}
+
+async function showAdvSubColor(ctx) {
+  ctx.session.currentWizardStep = "adv_color";
+  const keyboard = Markup.inlineKeyboard([
+    [Markup.button.callback("⚪ Чорно-білий", "adv_color_bw")],
+    [Markup.button.callback("🔵 Кольоровий", "adv_color_color")],
+    [Markup.button.callback("⬅️ Назад", "adv_back_to_menu")],
+  ]);
+  const preview = await getLivePreview(ctx);
+  await editWizardStep(ctx, "Оберіть колір:", keyboard, preview);
+}
+
+async function showAdvSubCopies(ctx) {
+  ctx.session.currentWizardStep = "adv_copies";
+  const keyboard = Markup.inlineKeyboard([
+    [
+      Markup.button.callback("1", "adv_copies_1"),
+      Markup.button.callback("2", "adv_copies_2"),
+    ],
+    [
+      Markup.button.callback("5", "adv_copies_5"),
+      Markup.button.callback("10", "adv_copies_10"),
+    ],
+    [Markup.button.callback("🔢 Інше", "adv_copies_other")],
+    [Markup.button.callback("⬅️ Назад", "adv_back_to_menu")],
+  ]);
+  const preview = await getLivePreview(ctx);
+  await editWizardStep(ctx, "Загальна кількість тиражу (копій):", keyboard, preview);
+}
+
+async function showAdvSubCPP(ctx) {
+  ctx.session.currentWizardStep = "adv_cpp";
+  const keyboard = Markup.inlineKeyboard([
+    [Markup.button.callback("1 копія", "adv_cpp_1")],
+    [Markup.button.callback("2 копії", "adv_cpp_2")],
+    [Markup.button.callback("4 копії", "adv_cpp_4")],
+    [Markup.button.callback("⬅️ Назад", "adv_back_to_menu")],
+  ]);
+  const preview = await getLivePreview(ctx);
+  await editWizardStep(ctx, "Копій кожної сторінки на аркуші:", keyboard, preview);
+}
+
+async function showAdvSubPPS(ctx) {
+  ctx.session.currentWizardStep = "adv_pps";
+  const cpp = ctx.session.printSettings.copiesPerPage;
+  const options = [
+    { id: 1, label: "1 сторінка" },
+    { id: 2, label: "2 сторінки" },
+    { id: 4, label: "4 сторінки" },
+  ];
+  const filteredOptions = options.filter((opt) => opt.id >= cpp);
+  const buttons = filteredOptions.map((opt) => [
+    Markup.button.callback(opt.label, `adv_pps_${opt.id}`),
+  ]);
+  buttons.push([Markup.button.callback("⬅️ Назад", "adv_back_to_menu")]);
+  const keyboard = Markup.inlineKeyboard(buttons);
+  const preview = await getLivePreview(ctx);
+  await editWizardStep(ctx, "Сторінок на аркуші (унікальних):", keyboard, preview);
 }
 
 async function renderCurrentWizardStep(ctx) {
@@ -263,12 +309,20 @@ async function renderCurrentWizardStep(ctx) {
   switch (step) {
     case "color":
       return showWizardStep1(ctx);
-    case "cpp":
-      return showWizardStepCPP(ctx);
-    case "pps":
-      return showWizardStepPPS(ctx);
     case "copies":
       return showWizardStepCopies(ctx);
+    case "fork":
+      return showWizardFork(ctx);
+    case "advanced_menu":
+      return showAdvancedMenu(ctx);
+    case "adv_color":
+      return showAdvSubColor(ctx);
+    case "adv_copies":
+      return showAdvSubCopies(ctx);
+    case "adv_cpp":
+      return showAdvSubCPP(ctx);
+    case "adv_pps":
+      return showAdvSubPPS(ctx);
     case "summary":
       return generateAndSendCheckPdf(ctx);
     default:
@@ -727,62 +781,24 @@ export function registerHandlers(bot) {
     if (!ctx.session.printSettings)
       return ctx.reply("Помилка сесії. Почніть спочатку: /start");
     ctx.session.printSettings.color = ctx.match[1] !== "bw";
-    await showWizardStepCPP(ctx);
-  });
-
-  // --- WIZARD: STEP 2 - CPP ---
-  bot.action(/wizard_cpp_(\d)/, async (ctx) => {
-    if (!ctx.session.printSettings)
-      return ctx.reply("Помилка сесії. Почніть спочатку: /start");
-    const cpp = parseInt(ctx.match[1]);
-    ctx.session.printSettings.copiesPerPage = cpp;
-
-    // Завжди скидаємо PPS до CPP, щоб уникнути застарілих значень
-    ctx.session.printSettings.pagesPerSheet = cpp;
-
-    await showWizardStepPPS(ctx);
-  });
-
-  bot.action("wizard_back_to_cpp", async (ctx) => {
-    await showWizardStepCPP(ctx);
+    await showWizardStepCopies(ctx);
   });
 
   bot.action("wizard_back_to_color", async (ctx) => {
     await showWizardStep1(ctx);
   });
 
-  // --- WIZARD: STEP 3 - PPS ---
-  bot.action(/wizard_pps_(\d)/, async (ctx) => {
-    if (!ctx.session.printSettings)
-      return ctx.reply("Помилка сесії. Почніть спочатку: /start");
-    const pps = parseInt(ctx.match[1]);
-    const cpp = ctx.session.printSettings.copiesPerPage;
-
-    if (pps < cpp) {
-      return ctx.answerCbQuery(
-        `Помилка: Неможливо розмістити ${cpp} копій на ${pps} комірках!`,
-        { show_alert: true },
-      );
-    }
-
-    ctx.session.printSettings.pagesPerSheet = pps;
-    await showWizardStepCopies(ctx);
-  });
-
-  bot.action("wizard_back_to_layout", async (ctx) => {
-    await showWizardStepPPS(ctx);
-  });
-
-  // --- WIZARD: STEP 4 - COPIES ---
+  // --- WIZARD: STEP 2 - COPIES ---
   bot.action(/wizard_copies_(\d+)/, async (ctx) => {
     if (!ctx.session.printSettings)
       return ctx.reply("Помилка сесії. Почніть спочатку: /start");
     ctx.session.printSettings.copies = parseInt(ctx.match[1]);
-    await generateAndSendCheckPdf(ctx);
+    await showWizardFork(ctx);
   });
 
   bot.action("wizard_copies_other", async (ctx) => {
     ctx.session.awaitingCopies = true;
+    ctx.session.copiesReturnTarget = "fork";
     const msg = ctx.callbackQuery.message;
     const isMedia = msg.photo || msg.document || msg.video;
     if (isMedia) {
@@ -802,14 +818,106 @@ export function registerHandlers(bot) {
         return ctx.reply("Помилка сесії. Почніть спочатку: /start");
       ctx.session.printSettings.copies = copies;
       ctx.session.awaitingCopies = false;
-      await generateAndSendCheckPdf(ctx);
+      const returnTarget = ctx.session.copiesReturnTarget;
+      ctx.session.copiesReturnTarget = null;
+      if (returnTarget === "advanced_menu") {
+        await showAdvancedMenu(ctx);
+      } else {
+        await showWizardFork(ctx);
+      }
       return;
     }
     return next();
   });
 
-  bot.action("wizard_back_to_copies", async (ctx) => {
+  // --- WIZARD: FORK SCREEN ---
+  bot.action("wizard_fork_print", async (ctx) => {
+    await generateAndSendCheckPdf(ctx);
+  });
+
+  bot.action("wizard_fork_more", async (ctx) => {
+    await showAdvancedMenu(ctx);
+  });
+
+  bot.action("wizard_back_to_copies_basic", async (ctx) => {
     await showWizardStepCopies(ctx);
+  });
+
+  // --- ADVANCED MENU ---
+  bot.action("adv_go_color", async (ctx) => {
+    await showAdvSubColor(ctx);
+  });
+
+  bot.action("adv_go_copies", async (ctx) => {
+    await showAdvSubCopies(ctx);
+  });
+
+  bot.action("adv_go_cpp", async (ctx) => {
+    await showAdvSubCPP(ctx);
+  });
+
+  bot.action("adv_go_pps", async (ctx) => {
+    await showAdvSubPPS(ctx);
+  });
+
+  bot.action("adv_print", async (ctx) => {
+    await generateAndSendCheckPdf(ctx);
+  });
+
+  bot.action("adv_back_to_menu", async (ctx) => {
+    await showAdvancedMenu(ctx);
+  });
+
+  bot.action(/adv_color_(.+)/, async (ctx) => {
+    if (!ctx.session.printSettings)
+      return ctx.reply("Помилка сесії. Почніть спочатку: /start");
+    ctx.session.printSettings.color = ctx.match[1] !== "bw";
+    await showAdvancedMenu(ctx);
+  });
+
+  bot.action(/adv_copies_(\d+)/, async (ctx) => {
+    if (!ctx.session.printSettings)
+      return ctx.reply("Помилка сесії. Почніть спочатку: /start");
+    ctx.session.printSettings.copies = parseInt(ctx.match[1]);
+    await showAdvancedMenu(ctx);
+  });
+
+  bot.action("adv_copies_other", async (ctx) => {
+    ctx.session.awaitingCopies = true;
+    ctx.session.copiesReturnTarget = "advanced_menu";
+    const msg = ctx.callbackQuery.message;
+    const isMedia = msg.photo || msg.document || msg.video;
+    if (isMedia) {
+      await ctx.editMessageCaption("Введіть кількість копій (1-50):", { reply_markup: { inline_keyboard: [] } });
+    } else {
+      await ctx.editMessageText("Введіть кількість копій (1-50):");
+    }
+  });
+
+  bot.action(/adv_cpp_(\d)/, async (ctx) => {
+    if (!ctx.session.printSettings)
+      return ctx.reply("Помилка сесії. Почніть спочатку: /start");
+    const cpp = parseInt(ctx.match[1]);
+    ctx.session.printSettings.copiesPerPage = cpp;
+    if (ctx.session.printSettings.pagesPerSheet < cpp) {
+      ctx.session.printSettings.pagesPerSheet = cpp;
+    }
+    await showAdvancedMenu(ctx);
+  });
+
+  bot.action(/adv_pps_(\d)/, async (ctx) => {
+    if (!ctx.session.printSettings)
+      return ctx.reply("Помилка сесії. Почніть спочатку: /start");
+    const pps = parseInt(ctx.match[1]);
+    const cpp = ctx.session.printSettings.copiesPerPage;
+    if (pps < cpp) {
+      return ctx.answerCbQuery(
+        `Помилка: Неможливо розмістити ${cpp} копій на ${pps} комірках!`,
+        { show_alert: true },
+      );
+    }
+    ctx.session.printSettings.pagesPerSheet = pps;
+    await showAdvancedMenu(ctx);
   });
 
   async function generateAndSendCheckPdf(ctx) {
@@ -850,7 +958,7 @@ export function registerHandlers(bot) {
 
       const keyboard = Markup.inlineKeyboard([
         [Markup.button.callback("🖨 Друкувати!", "action_print")],
-        [Markup.button.callback("⚙️ Почати спочатку", "wizard_start")],
+        [Markup.button.callback("⚙️ Змінити налаштування", "wizard_fork_more")],
         [Markup.button.callback("❌ Скасувати друк", "action_cancel_print")],
       ]);
 
@@ -876,10 +984,6 @@ export function registerHandlers(bot) {
       );
     }
   }
-
-  bot.action("wizard_back_to_duplex", async (ctx) => {
-    await showWizardStepCopies(ctx);
-  });
 
   // --- ДІЯ "ПРЯМИЙ ДРУК" ---
   bot.action("action_print_direct", async (ctx) => {
