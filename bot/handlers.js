@@ -185,8 +185,8 @@ async function showWizardStep1(ctx) {
     type: ctx.session.printSettings?.type || "Служіння",
   };
   const keyboard = Markup.inlineKeyboard([
-    [Markup.button.callback("⚪ Чорно-білий", "wizard_color_bw")],
-    [Markup.button.callback("🔵 Кольоровий", "wizard_color_color")],
+    [Markup.button.callback("🔲 Чорно-білий", "wizard_color_bw")],
+    [Markup.button.callback("🎨 Кольоровий", "wizard_color_color")],
     [Markup.button.callback("❌ Скасувати друк", "action_cancel_print")],
   ]);
   const preview = await getLivePreview(ctx);
@@ -219,10 +219,10 @@ async function showWizardStepCopies(ctx) {
 async function showWizardFork(ctx) {
   ctx.session.currentWizardStep = "fork";
   const s = ctx.session.printSettings;
-  const colorLabel = s.color ? "Кольоровий" : "Чорно-білий";
-  const text = `Налаштування:\n🎨 Колір: ${colorLabel}\n👥 Копій: ${s.copies}\n\nГотові друкувати або хочете змінити додаткові параметри?`;
+  const colorLabel = s.color ? "🎨 Кольоровий" : "🔲 Чорно-білий";
+  const text = `Налаштування:\n${colorLabel} друк\n👥 Копій: ${s.copies}\n\nГотові друкувати або хочете змінити додаткові параметри?`;
   const keyboard = Markup.inlineKeyboard([
-    [Markup.button.callback("🖨 Друкувати", "wizard_fork_print")],
+    [Markup.button.callback("✅ Готово", "wizard_fork_print")],
     [Markup.button.callback("⚙️ Більше налаштувань", "wizard_fork_more")],
     [Markup.button.callback("⬅️ Назад", "wizard_back_to_copies_basic")],
   ]);
@@ -233,13 +233,13 @@ async function showWizardFork(ctx) {
 async function showAdvancedMenu(ctx) {
   ctx.session.currentWizardStep = "advanced_menu";
   const s = ctx.session.printSettings;
-  const colorLabel = s.color ? "🔵 Кольоровий" : "⚪ Чорно-білий";
+  const colorLabel = s.color ? "🎨 Кольоровий" : "🔲 Чорно-білий";
   const keyboard = Markup.inlineKeyboard([
-    [Markup.button.callback(`🎨 Колір: ${colorLabel}`, "adv_go_color")],
+    [Markup.button.callback(`${colorLabel}`, "adv_go_color")],
     [Markup.button.callback(`👥 Копій: ${s.copies}`, "adv_go_copies")],
     [Markup.button.callback(`👯 Копій на сторінку: ${s.copiesPerPage}`, "adv_go_cpp")],
     [Markup.button.callback(`📏 Сторінок на аркуші: ${s.pagesPerSheet}`, "adv_go_pps")],
-    [Markup.button.callback("🖨 Друкувати", "adv_print")],
+    [Markup.button.callback("✅ Готово", "adv_print")],
   ]);
   const preview = await getLivePreview(ctx);
   await editWizardStep(ctx, "⚙️ Додаткові налаштування:", keyboard, preview);
@@ -248,8 +248,8 @@ async function showAdvancedMenu(ctx) {
 async function showAdvSubColor(ctx) {
   ctx.session.currentWizardStep = "adv_color";
   const keyboard = Markup.inlineKeyboard([
-    [Markup.button.callback("⚪ Чорно-білий", "adv_color_bw")],
-    [Markup.button.callback("🔵 Кольоровий", "adv_color_color")],
+    [Markup.button.callback("🔲 Чорно-білий", "adv_color_bw")],
+    [Markup.button.callback("🎨 Кольоровий", "adv_color_color")],
     [Markup.button.callback("⬅️ Назад", "adv_back_to_menu")],
   ]);
   const preview = await getLivePreview(ctx);
@@ -949,7 +949,7 @@ export function registerHandlers(bot) {
       const summary =
         `📋 Ось файл, який надіслаться на друк. Перевірте його перед відправкою!\n\n` +
         `📂 Тип: ${s.type}\n` +
-        `🎨 ${s.color ? "Кольоровий друк" : "Чорно-білий друк"}\n` +
+        `${s.color ? "🎨 Кольоровий" : "🔲 Чорно-білий"} друк\n` +
         `👯‍♂️ Копій кожної сторінки: ${s.copiesPerPage}\n` +
         `📏 Сторінок на аркуші: ${s.pagesPerSheet}\n` +
         `👥 Загальний тираж: ${s.copies}\n` +
@@ -1078,7 +1078,7 @@ export function registerHandlers(bot) {
               `📄 Сторінок: ${ctx.session.currentFile.pages}\n` +
               `👥 Копій: ${settings.copies}\n` +
               `📂 Тип: ${settings.type}\n` +
-              `🎨 ${settings.color ? "Кольоровий друк" : "Чорно-білий друк"}\n`;
+              `${settings.color ? "🎨 Кольоровий" : "🔲 Чорно-білий"} друк\n`;
 
             for (const adminId of admins) {
               try {
