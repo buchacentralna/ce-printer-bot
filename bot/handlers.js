@@ -965,7 +965,7 @@ export function registerHandlers(bot) {
       await ctx.telegram.deleteMessage(ctx.chat.id, statusMsg.message_id);
 
       const docMsg = await ctx.replyWithDocument(
-        { source: processedBuffer, filename: `check_${f.name}.pdf` },
+        { source: processedBuffer, filename: `check_${f.name.replace(/\.pdf$/i, "")}.pdf` },
         { caption: summary, parse_mode: "Markdown", ...keyboard },
       );
       ctx.session.lastWizardMsgId = docMsg.message_id;
